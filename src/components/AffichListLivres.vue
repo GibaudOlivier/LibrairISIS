@@ -4,16 +4,15 @@
   </div>
   <h3>Liste des livres</h3>
   <ul>
-    <!--<li v-for="livre in listeLivres" :key="[livre.id]">
-      {{ livre.pourAfficher() }} <br />
-      <button @click="$emit('deletel', livre.id)">-</button>
-    </li>-->
     <UnLivre
       v-for="livre of listeLivres"
       :key="[livre.id]"
       :livre="livre"
-      @deletel="deleteLivre"
+      @deletel="deleteOneBook"
+      @addl="addOneBook"
+      @alldeletel="handlerDelete"
     />
+    <FormNewBook @add-livre="handlerNewBook" />
   </ul>
 </template>
 
@@ -24,6 +23,7 @@ import { defineProps } from "vue";
 import Livre from "../Livre.js";
 import FormRechercheLivre from "./FormRechercheLivre.vue";
 import UnLivre from "./UnLivre";
+import FormNewBook from "./FormNewBook.vue";
 
 const fetchOptions = { method: "GET" };
 const listeLivres = reactive([]);
@@ -31,19 +31,19 @@ const listeLivres = reactive([]);
 const props = defineProps(["recherche"]);
 
 watch(props, (newcritere) => {
-  getTodos(newcritere.recherche);
+  getLivres(newcritere.recherche);
 });
 
-const apiKey = "2";
+const apiKey = "8";
 let url =
   "https://webmmi.iut-tlse3.fr/~pecatte/librairies/public/" +
   apiKey +
   "/livres";
 
-getTodos();
+getLivres();
 
 //Fonctions
-function getTodos(recherche) {
+function getLivres(recherche) {
   fetch(url, fetchOptions)
     .then((response) => {
       return response.json();
@@ -62,31 +62,45 @@ function getTodos(recherche) {
     });
 }
 
-/*function getRecherche(recherche) {
-  url =
-    "https://webmmi.iut-tlse3.fr/~pecatte/librairies/public/4/livres?search=" +
-    recherche;
+function modifieLivre(livre) {
+  let myHeaders = new Headers();
+  myHeaders.append("Content-Type", "application/json");
+  const fetchOptions = {
+    method: "PUT",
+    headers: myHeaders,
+    body: JSON.stringify(livre),
+  };
   fetch(url, fetchOptions)
     .then((response) => {
       return response.json();
     })
     .then((dataJSON) => {
       console.log(dataJSON);
-      dataJSON.forEach((livres) =>
-        listeLivres.push(
-          new Livre(livres.id, livres.titre, livres.qtestock, livres.prix)
-        )
-      );
-      console.log(listeLivres);
+      getLivres();
     })
-    .then((error) => {
-      console.log(error);
-    });
-}*/
+    .catch((error) => console.log(error));
+}
+
+function deleteOneBook(id) {
+  const fetchOptions = { method: "GET" };
+  fetch(url + "/" + id, fetchOptions)
+    .then((response) => {
+      return response.json();
+    })
+    .then((livre) => {
+      if (livre.qtestock - 1 > 0) {
+        livre.qtestock = livre.qtestock - 1;
+        modifieLivre(livre);
+      } else {
+        handlerDelete(livre.id);
+      }
+    })
+    .catch((error) => console.log(error));
+}
 
 function handlerDelete(id) {
   const fetchOptions = {
-    method: "delete",
+    method: "DELETE",
   };
   fetch(url + "/" + id, fetchOptions)
     .then((response) => {
@@ -94,30 +108,6 @@ function handlerDelete(id) {
     })
     .then((dataJSON) => {
       console.log(dataJSON);
-    })
-    .catch((error) => console.log(error));
-}
-
-function handlerAdd(l) {
-  let myHeaders = new Headers();
-  myHeaders.append("Content-Type", "application/json");
-  const fetchOptions = {
-    method: "POST",
-    headers: myHeaders,
-    body: JSON.stringify({ libelle: l }),
-  };
-  let p = new Livre(l);
-  listeLivres.push(p);
-
-  fetch(url, fetchOptions)
-    .then((response) => {
-      return response.json();
-    })
-    .then((dataJSON) => {
-      console.log(dataJSON);
-      dataJSON.forEach((v) =>
-        listeLivres.push(new Livre(v.id, v.libelle, v.fait))
-      );
     })
     .catch((error) => console.log(error));
 }
@@ -144,6 +134,19 @@ function handlerNewBook(livre) {
       dataJSON.forEach((v) =>
         listeLivres.push(new Livre(v.id, v.libelle, v.fait))
       );
+    })
+    .catch((error) => console.log(error));
+}
+
+function addOneBook(id) {
+  const fetchOptions = { method: "GET" };
+  fetch(url + "/" + id, fetchOptions)
+    .then((response) => {
+      return response.json();
+    })
+    .then((livre) => {
+      livre.qtestock = livre.qtestock + 1;
+      modifieLivre(livre);
     })
     .catch((error) => console.log(error));
 }

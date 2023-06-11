@@ -31,7 +31,6 @@ a {
 <template>
   <div>
     <h3>Ma petite librairie</h3>
-    <!--<FormRechercheLivre @addc="handlerTexte" />  -->
     <AffichListLivres :recherche="recherche" />
   </div>
 </template>

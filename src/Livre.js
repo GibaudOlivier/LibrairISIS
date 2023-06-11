@@ -24,6 +24,6 @@ export default class Livre {
     this._qtestock = qtestock;
   }
   pourAfficher() {
-    return `${this._id} (${this._titre}) (${this._qtestock}) (${this._prix})`;
+    return `${this._titre};  Stock : (${this._qtestock}); Prix Unitaire : (${this._prix}€)`;
   }
 }
