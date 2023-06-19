@@ -1,4 +1,4 @@
-//Un film
+//Un livre
 export default class Livre {
   constructor(id, titre, qtestock, prix) {
     this._id = id;
