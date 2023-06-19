@@ -14,7 +14,7 @@ export default class Livre {
   get titre() {
     return this._titre;
   }
-  get image() {
+  get qtestock() {
     return this._qtestock;
   }
   get prix() {

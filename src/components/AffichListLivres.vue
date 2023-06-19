@@ -1,8 +1,8 @@
 <template>
   <div>
-    <FormRechercheLivre @recherche="t" />
+    <FormRechercheLivre @recherche-l="handlerSearch" />
   </div>
-  <h3>Liste des livres disponibles:</h3>
+  <h3>Liste des livres en Stock:</h3>
   <div class="listLivre">
     <ul>
       <UnLivre
@@ -36,16 +36,11 @@ let url =
 
 const props = defineProps(["recherche"]);
 
-// watch(
-//   () => props.recherche,
-//   (newcritere) => {
-//     getLivres(newcritere);
-//   }
-// );
-
 //Fonctions
+//Permet de récupérer les livres
 function getLivres() {
-  listeLivres.splice(0, listeLivres.lenght);
+  //Vide la liste pour éviter les doublons
+  listeLivres.splice(0, listeLivres.length);
   fetch(url, fetchOptions)
     .then((response) => {
       return response.json();
@@ -63,6 +58,7 @@ function getLivres() {
     });
 }
 
+//Permet de prendre en charge la modification des livres
 function modifieLivre(livre) {
   let myHeaders = new Headers();
   myHeaders.append("Content-Type", "application/json");
@@ -81,6 +77,7 @@ function modifieLivre(livre) {
     .catch((error) => console.log(error));
 }
 
+//Gére la suppression définitive d'un livre (pas seulement -1 en stock)
 function handlerDelete(id) {
   const fetchOptions = {
     method: "DELETE",
@@ -91,10 +88,12 @@ function handlerDelete(id) {
     })
     .then((dataJSON) => {
       console.log(dataJSON);
+      getLivres();
     })
     .catch((error) => console.log(error));
 }
 
+//Ajoute un livre au stock
 function addOneBook(id) {
   const fetchOptions = { method: "GET" };
   fetch(url + "/" + id, fetchOptions)
@@ -109,6 +108,26 @@ function addOneBook(id) {
     .catch((error) => console.log(error));
 }
 
+//Supprime un livre au stock
+function deleteOneBook(id) {
+  const fetchOptions = { method: "GET" };
+  fetch(url + "/" + id, fetchOptions)
+    .then((response) => {
+      return response.json();
+    })
+    .then((livre) => {
+      if (livre.qtestock - 1 > 0) {
+        livre.qtestock = livre.qtestock - 1;
+        modifieLivre(livre);
+        getLivres();
+      } else {
+        handlerDelete(livre.id);
+      }
+    })
+    .catch((error) => console.log(error));
+}
+
+//Permet la création d'un nouveau livre, où on choisira le titre, le prix, et le stock
 function handlerNewBook(livre) {
   let myHeaders = new Headers();
   myHeaders.append("Content-Type", "application/json");
@@ -133,19 +152,35 @@ function handlerNewBook(livre) {
     .catch((error) => console.log(error));
 }
 
-function deleteOneBook(id) {
+//Permet la fonctionnalité de recherche
+function handlerSearch(recherche) {
   const fetchOptions = { method: "GET" };
-  fetch(url + "/" + id, fetchOptions)
+  const urlsearch =
+    "https://webmmi.iut-tlse3.fr/~pecatte/librairies/public/8/livres?search=";
+  document.getElementById("listeRecherche").innerHTML = "";
+  fetch(urlsearch + recherche, fetchOptions)
     .then((response) => {
       return response.json();
     })
-    .then((livre) => {
-      if (livre.qtestock - 1 > 0) {
-        livre.qtestock = livre.qtestock - 1;
-        modifieLivre(livre);
-      } else {
-        handlerDelete(livre.id);
+    .then((dataJSON) => {
+      console.log(dataJSON);
+      let listeLivre = dataJSON;
+      let resultat = "";
+      for (let livre of listeLivre) {
+        resultat +=
+          "<li>" +
+          livre.titre +
+          "; Stock : (" +
+          livre.qtestock +
+          ") Prix : (" +
+          livre.prix +
+          ")</li>";
       }
+      //Gére le cas où la liste de recherche est vide
+      if (listeLivre.length == 0) {
+        resultat = "Aucun livre trouvé";
+      }
+      document.getElementById("listeRecherche").innerHTML += resultat;
     })
     .catch((error) => console.log(error));
 }
